@@ -48,6 +48,49 @@
   }
 
   /* ----------------------------------------------------------------
+     AUTO-FIT DISPLAY TEXT
+     clamp(min, vw, max) sizing guesses at how wide a string will
+     render — it has no idea how wide "SUTRAKALPA" actually is in
+     Cormorant Garamond at a given size, so it can (and did) overflow.
+     Instead: let CSS pick a starting font-size, then measure the
+     element's real rendered width against its available space and
+     shrink it — proportionally, in one step — until it fits. Runs
+     on load, after web fonts finish swapping in (metrics can shift),
+     and on resize/orientation change.
+     ---------------------------------------------------------------- */
+  var fitEls = [];
+
+  function collectFitEls() {
+    fitEls = Array.prototype.slice.call(document.querySelectorAll('.js-fit-text'));
+  }
+
+  function availableWidth(el) {
+    var parent = el.parentElement;
+    var cs = getComputedStyle(parent);
+    var pad = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+    return parent.clientWidth - pad;
+  }
+
+  function fitText(el) {
+    // Reset to the CSS-authored size each time so we can grow back
+    // up again on wider viewports, not just shrink permanently.
+    el.style.fontSize = '';
+    var space = availableWidth(el);
+    var actual = el.scrollWidth;
+    if (!space || !actual || actual <= space) return;
+
+    var cssSize = parseFloat(getComputedStyle(el).fontSize);
+    var minSize = parseFloat(el.getAttribute('data-fit-min')) || 12;
+    // 0.98 leaves a hair of breathing room so it doesn't sit pixel-flush.
+    var fitted = Math.max(minSize, Math.floor(cssSize * (space / actual) * 0.98));
+    el.style.fontSize = fitted + 'px';
+  }
+
+  function fitAll() {
+    fitEls.forEach(fitText);
+  }
+
+  /* ----------------------------------------------------------------
      Scroll-to-top cue
      ---------------------------------------------------------------- */
   var scrollCue = document.getElementById('scrollCue');
@@ -214,12 +257,16 @@
   function onResize() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () {
+      fitAll(); // re-fit first — the thread anchors sit relative to text layout
       measure();
       if (reduceMotion) render(0);
     }, 120);
   }
 
   function init() {
+    collectFitEls();
+    fitAll();
+
     collectPoints();
     if (!Object.keys(groups).length) return;
     measure();
@@ -235,9 +282,21 @@
 
     window.addEventListener('resize', onResize);
     window.addEventListener('load', function () {
+      fitAll();
       measure();
       render(performance.now());
     });
+
+    // Web fonts can swap in after first paint and shift text metrics —
+    // refit once they're actually ready, then re-measure the thread
+    // since the headline's box may have just changed size.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(function () {
+        fitAll();
+        measure();
+        render(performance.now());
+      });
+    }
   }
 
   if (document.readyState === 'loading') {

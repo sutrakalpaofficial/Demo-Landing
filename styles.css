@@ -196,6 +196,8 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   color: var(--ink);
   position: relative;
   z-index: 3;
+  white-space: nowrap; /* one word — never wrap; JS shrinks it to fit instead */
+  max-width: 100%;
 }
 
 .pt{ position: absolute; width: 0; height: 0; pointer-events: none; }
@@ -369,7 +371,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 .contact__eyebrow{ font-size: 0.66rem; letter-spacing: 0.22em; color: var(--ink-40); margin-bottom: 18px; }
 .contact__eyebrow + .contact__eyebrow{ margin-top: 46px; }
-.contact__email{ font-family: var(--font-display); font-size: clamp(1.9rem, 4.4vw, 3.1rem); margin-bottom: 46px; }
+.contact__email{ font-family: var(--font-display); font-size: clamp(1.9rem, 4.4vw, 3.1rem); margin-bottom: 46px; white-space: nowrap; max-width: 100%; display: inline-block; }
 .contact__email a{ border-bottom: 1px solid var(--ink-15); transition: border-color .3s ease, color .3s ease; padding-bottom: 4px; }
 .contact__email a:hover{ color: var(--vermillion); border-color: var(--vermillion); }
 .contact__social{ display: flex; justify-content: center; gap: 32px; font-size: 0.7rem; letter-spacing: 0.14em; }
